@@ -1,0 +1,22 @@
+{
+  "name": "@vehicle-management/api",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && cp -r netlify dist/",
+    "preview": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.3.0",
+    "hono": "^3.12.0",
+    "drizzle-orm": "^0.29.3",
+    "postgres": "^3.4.3",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.20.13",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

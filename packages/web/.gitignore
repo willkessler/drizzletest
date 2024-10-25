@@ -1,0 +1,38 @@
+node_modules
+
+# Output
+.output
+.vercel
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+*~
+
+# Local Netlify folder
+.netlify
+
+# Extra local backup files I create while iterating
+*.0
+*.1
+*.2
+*.3
+*.4
+*.5
+*.6
+*.7
+*.8
+*.9
