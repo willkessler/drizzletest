@@ -1,58 +1,79 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+ import { onMount, onDestroy } from 'svelte';
 
-  export let selectedIds: number[] = [];
-  
-  interface Vehicle {
-    id: number;
-    type: string;
-    size: string;
-    miles: number;
-    lastService: string;
-  }
+ let vehicles = $state([]);
+ let isLoading = $state(true);
+ let error = $state(null);
+ let pollingInterval = $state(10000);
 
-  let vehicles: Vehicle[] = [];
-  let loading = true;
-  let error: string | null = null;
+ let { selectedIds = [] } = $props();
+ 
+ interface Vehicle {
+   id: number;
+   type: string;
+   size: string;
+   miles: number;
+   lastService: string;
+ }
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-  async function fetchVehicles() {
-    loading = true;
-    error = null;
-    try {
-      const queryParams = selectedIds.length ? `?ids=${selectedIds.join(',')}` : '';
-      const response = await fetch(`${API_URL}/api/getVehicles${queryParams}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log(`fetched data from ${import.meta.env.VITE_API_URL}:`, vehicles);
-        vehicles = data.vehicles;
-      } else {
-        error = data.error;
-      }
-    } catch (e) {
-      error = 'Failed to fetch vehicles';
-      console.error(e);
-    } finally {
-      loading = false;
-    }
-  }
+ async function fetchVehicles() {
+   isLoading = true;
+   error = null;
+   try {
+     const queryParams = selectedIds.length ? `?ids=${selectedIds.join(',')}` : '';
+     const response = await fetch(`${API_URL}/api/getVehicles${queryParams}`);
+     const data = await response.json();
+     
+     if (data.success) {
+       console.log(`fetched data from ${import.meta.env.VITE_API_URL}:`, vehicles);
+       vehicles = data.vehicles;
+     } else {
+       error = data.error;
+     }
+   } catch (e) {
+     error = 'Failed to fetch vehicles';
+     console.error(e);
+   } finally {
+     isLoading = false;
+   }
+ }
 
-  onMount(() => {
-    fetchVehicles();
-  });
+ function startPolling() {
+   // Initial fetch
+   fetchVehicles();
+   
+   // Set up polling every 30 seconds
+   pollingInterval = setInterval(fetchVehicles, pollingInterval);
+ }
 
-  $: if (selectedIds) {
-    fetchVehicles();
-  }
+ onMount(() => {
+   startPolling();
+ });
+
+ onDestroy(() => {
+   // Clean up interval when component unmounts
+   if (pollingInterval) {
+     clearInterval(pollingInterval);
+   }
+ });
+
+ $effect(() => {
+   if (selectedIds) {
+     fetchVehicles();
+   }
+ });
 </script>
 
-{#if loading}
-  <p>Loading vehicles...</p>
-{:else if error}
-  <p class="error">{error}</p>
+{#if error}
+  <div class="error">Error: {error}</div>
+{/if}
+
+{#if isLoading && !vehicles.length}
+  <div>Loading vehicles...</div>
 {:else}
+
   <table>
     <thead>
       <tr>
