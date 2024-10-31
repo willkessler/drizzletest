@@ -10,8 +10,10 @@ dotenv.config()
 const app = new Hono()
 const port = parseInt(process.env.PORT || '3000')
 
+const origins = ['http://localhost:5173', 'http://localhost:5174']
+
 app.use('/*', cors({
-  origin: ['http://localhost:5173'], // SvelteKit dev server default port
+  origin: origins,
   credentials: true,
 }))
 

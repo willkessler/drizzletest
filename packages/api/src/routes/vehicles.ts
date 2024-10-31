@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { db } from '../db'
 import { vehicles } from '../db/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, asc, desc } from 'drizzle-orm'
 import { isValidDate } from '../utils/validators'
 
 const vehicleRoutes = new Hono();
@@ -10,7 +10,7 @@ vehicleRoutes.get('/getVehicles', async (c) => {
   try {
     const ids = c.req.query('ids')?.split(',').map(Number);
     
-    let query = db.select().from(vehicles);
+    let query = db.select().from(vehicles).orderBy(desc(vehicles.lastService));
     if (ids?.length) {
       query = query.where(inArray(vehicles.id, ids));
     }
@@ -21,6 +21,38 @@ vehicleRoutes.get('/getVehicles', async (c) => {
     return jsonResults;
   } catch (error) {
     return c.json({ success: false, error: 'Failed to fetch vehicles' }, 500);
+  }
+})
+
+vehicleRoutes.post('/createVehicle', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { type, size, miles, lastService } = body;
+
+    // Validation
+    if (!type || !size || typeof miles !== 'number' || !lastService) {
+      return c.json({ success: false, error: 'Missing required fields' }, 400);
+    }
+
+    if (!isValidDate(lastService)) {
+      return c.json({ success: false, error: 'Invalid date format. Use MM/DD/YYYY' }, 400);
+    }
+
+    const [month, day, year] = lastService.split('/').map(Number);
+    const formattedDate = new Date(year, month - 1, day);
+
+    await db.insert(vehicles)
+      .values({
+        type,
+        size,
+        miles,
+        lastService: formattedDate
+      })
+      .onConflictDoNothing();
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to create vehicle' }, 500);
   }
 })
 
